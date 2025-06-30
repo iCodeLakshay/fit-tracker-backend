@@ -20,8 +20,7 @@ const createWorkout = async(req, res) => {
     try {
         const newWorkout = new Workout(req.body);
         await newWorkout.save();
-        console.log('New workout created:', newWorkout);
-        
+                
         // Automatically add the workout to the user's workouts array
         await User.findByIdAndUpdate(
             req.body.userId,
