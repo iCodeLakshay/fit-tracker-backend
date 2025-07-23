@@ -1,9 +1,5 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import User from '../models/user.js';
 import Workout from '../models/workout.js';
-
-// Initialize Gemini API
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const sendMessage = async (req, res) => {
     if (!process.env.GEMINI_API_KEY) {
@@ -45,11 +41,8 @@ const sendMessage = async (req, res) => {
             });
         }
 
-        // Get the generative model
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-
         // Create fitness-focused system prompt with user data
-        const systemPrompt = `You are an expert AI fitness trainer and nutritionist. Your role is to provide helpful, accurate, and motivating fitness advice.\n\nHere is the user's profile and recent workout history:\n${userProfileSummary}\n${workoutsSummary}\n\nInstructions:\n1. Give personalized workout recommendations based on user goals and history\n2. Provide nutrition and diet advice\n3. Explain proper exercise form and technique\n4. Offer motivation and support\n5. Help with goal setting and progress tracking\n6. Answer questions about fitness, health, and wellness\n\nKeep your responses practical, encouraging, and focused on fitness. If asked about medical concerns, advise consulting a healthcare professional.\n\nUser's message: ${message}`;
+        const systemPrompt = `You are an expert AI fitness trainer and nutritionist. Your role is to provide helpful, accurate, and motivating fitness advice.\n\nHere is the user's profile and recent workout history:\n${userProfileSummary}\n${workoutsSummary}\n\nInstructions:\n1. Give personalized workout recommendations based on user goals and history\n2. Provide nutrition and diet advice\n3. Explain proper exercise form and technique\n4. Offer motivation and support\n5. Help with goal setting and progress tracking\n6. Answer questions about fitness, health, and wellness\n\nIMPORTANT: Keep your responses to the point. Avoid unwanted explanations. Be practical and actionable. If asked about medical concerns, advise consulting a healthcare professional.\n\nUser's message: ${message}`;
 
         // Include conversation history for context
         let fullPrompt = systemPrompt;
@@ -61,14 +54,39 @@ const sendMessage = async (req, res) => {
             fullPrompt += `\nUser: ${message}`;
         }
 
-        // Generate response
-        const result = await model.generateContent(fullPrompt);
-        const response = result.response;
-        const text = response.text();
+        // Generate response using direct API call
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${process.env.GEMINI_API_KEY}`;
+        
+        const requestBody = {
+            contents: [
+                {
+                    parts: [
+                        {
+                            text: fullPrompt
+                        }
+                    ]
+                }
+            ]
+        };
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't generate a response.";
 
         return res.status(200).json({
             success: true,
-            response: text,
+            response: aiResponse,
             timestamp: new Date().toISOString()
         });
 
@@ -110,7 +128,6 @@ const getConversationSuggestions = async (req, res) => {
             return res.status(200).json({ success: true, suggestions: genericSuggestions });
         }
 
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
         const prompt = `Based on the following user profile, generate 4 short, engaging, and personalized questions that this user might ask their AI fitness trainer. The user's goal is to get guidance on their fitness journey.
 
 User Profile:
@@ -125,12 +142,38 @@ Generate exactly 4 questions, each enclosed in double quotes and separated by a 
 "Can you suggest a 3-day workout split?"
 "How do I stay motivated on days I feel tired?"`;
 
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = await response.text();
+        // Generate response using direct API call
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${process.env.GEMINI_API_KEY}`;
+        
+        const requestBody = {
+            contents: [
+                {
+                    parts: [
+                        {
+                            text: prompt
+                        }
+                    ]
+                }
+            ]
+        };
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
         // Parse the generated suggestions
-        const suggestions = text.split('\n').map(s => s.trim().replace(/"/g, '')).filter(s => s);
+        const suggestions = aiResponse.split('\n').map(s => s.trim().replace(/"/g, '')).filter(s => s);
 
         if (suggestions.length === 0) {
             // Fallback if generation fails
