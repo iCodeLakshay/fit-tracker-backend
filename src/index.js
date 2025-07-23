@@ -7,6 +7,7 @@ dotenv.config();
 import workoutRoutes from '../routes/workout.route.js';
 import userRoutes from '../routes/user.route.js';
 import authRoutes from "../routes/auth.route.js";
+import aiRoutes from "../routes/ai.route.js";
 
 
 mongoose.connect(process.env.MONGODB_URL)
@@ -19,8 +20,9 @@ const app = express();
 // CORS origins
 const DEV_ORIGIN = process.env.DEV_ORIGIN;
 const PROD_ORIGIN = process.env.PROD_ORIGIN;
+const TEST_URL = process.env.TEST_URL;
 
-const ALLOWED_ORIGINS = [DEV_ORIGIN, PROD_ORIGIN];
+const ALLOWED_ORIGINS = [DEV_ORIGIN, PROD_ORIGIN, TEST_URL];
 
 const corsOption = {
     origin: (origin, callback) => {
@@ -42,6 +44,7 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use('/api/workout', workoutRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/ai', aiRoutes);
 
 const PORT=5000;
 app.listen(PORT, ()=>{
