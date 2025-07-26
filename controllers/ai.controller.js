@@ -140,7 +140,9 @@ Generate exactly 4 questions, each enclosed in double quotes and separated by a 
 "How can I improve my squat form?"
 "What's a good post-workout meal for me?"
 "Can you suggest a 3-day workout split?"
-"How do I stay motivated on days I feel tired?"`;
+"How do I stay motivated on days I feel tired?
+
+Make sure to keep the questions concise, short and relevant to the user's fitness journey."`;
 
         // Generate response using direct API call
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${process.env.GEMINI_API_KEY}`;
