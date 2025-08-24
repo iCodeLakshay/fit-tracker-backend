@@ -41,13 +41,13 @@ app.use(cors(corsOption));
 app.use(express.json());
 
 // Routes
-app.use("/", (req, res) => {
-    res.send("Welcome to FitTracker API");
-});
 app.use("/api/auth", authRoutes);
 app.use('/api/workout', workoutRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/ai', aiRoutes);
+app.use("/", (req, res) => {
+    res.send("Welcome to FitTracker API");
+});
 
 const PORT=5000;
 app.listen(PORT, ()=>{
